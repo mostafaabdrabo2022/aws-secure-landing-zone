@@ -1,0 +1,11 @@
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "AllowAssumeProductionRole",
+			"Effect": "Allow",
+			"Action": "sts:AssumeRole",
+			"Resource": "arn:aws:iam::251880984053:role/Role-Production-Admin"
+		}
+	]
+}

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>رحلتي - إدارة الحجوزات</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {theme: {extend: {
+  colors: {brand: {DEFAULT: '#1B75BC', dark: '#0F4C81'}, accent: {DEFAULT: '#1BB580', dark: '#139468'}},
+  fontFamily: {sans: ['Cairo', 'sans-serif']}}}};
+</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
+
+<header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30">
+  <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <span class="grid place-items-center w-10 h-10 rounded-xl bg-brand text-white text-xl">🛡️</span>
+      <div>
+        <h1 class="font-extrabold text-xl text-brand">لوحة تحكم المسؤولين (Admin)</h1>
+        <p class="text-xs text-slate-500">نظام إدارة حجز الرحلات والفنادق - ADFS / IAM Ready</p>
+      </div>
+    </div>
+    <div id="adminAuthArea"></div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 py-8 grid gap-6">
+  <div class="flex flex-wrap justify-between items-center bg-white p-6 rounded-2xl border border-slate-200 shadow-sm gap-4">
+    <div>
+      <h3 class="text-xl font-extrabold">إدارة حجوزات العملاء</h3>
+      <p class="text-sm text-slate-500">متابعة ومراجعة حالة الحجوزات وقبولها أو إلغاؤها</p>
+    </div>
+    <button id="refreshBtn" class="bg-slate-100 hover:bg-slate-200 font-bold px-5 py-2.5 rounded-xl transition">🔄 تحديث البيانات</button>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-start border-collapse">
+        <thead>
+          <tr class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase">
+            <th class="p-4 text-start">رقم الحجز</th>
+            <th class="p-4 text-start">العميل</th>
+            <th class="p-4 text-start">نوع الحجز والخدمة</th>
+            <th class="p-4 text-start">التواريخ والكمية</th>
+            <th class="p-4 text-start">بيانات المسافرين</th>
+            <th class="p-4 text-start">الإجمالي</th>
+            <th class="p-4 text-start">الحالة</th>
+            <th class="p-4 text-start">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="bookingsTableBody" class="divide-y divide-slate-100 text-sm">
+          <!-- يتم تعبئتها ديناميكياً -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<div id="toast" class="fixed bottom-6 inset-x-0 mx-auto w-max max-w-[90vw] bg-slate-900 text-white px-5 py-3 rounded-2xl opacity-0 pointer-events-none transition-opacity"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+async function api(url, method = 'GET', body) {
+  const r = await fetch(url, {method, headers: {'Content-Type': 'application/json'}, body: body && JSON.stringify(body)});
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(d.error || 'حدث خطأ'); e.status = r.status; throw e; }
+  return d;
+}
+function toast(t) {
+  const el = $('#toast'); el.textContent = t;
+  el.classList.replace('opacity-0', 'opacity-100');
+  setTimeout(() => el.classList.replace('opacity-100', 'opacity-0'), 2800);
+}
+
+async function checkAuth() {
+  try {
+    const user = await api('/api/me');
+    if (!user || user.email !== 'admin@rehlti.com') {
+      window.location.href = 'login.html';
+      return;
+    }
+    $('#adminAuthArea').innerHTML = `<span class="font-bold text-slate-700">مرحباً، ${user.name} (مسؤول)</span> <button id="adminLogout" class="text-red-600 font-bold ms-4">خروج</button>`;
+    $('#adminLogout').onclick = async () => { await api('/api/logout', 'POST'); window.location.href = 'login.html'; };
+    loadBookings();
+  } catch (e) {
+    window.location.href = 'login.html';
+  }
+}
+
+async function loadBookings() {
+  try {
+    const rows = await api('/api/admin/bookings');
+    const tbody = $('#bookingsTableBody');
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400">لا توجد حجوزات مسجلة حتى الآن</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map(b => `
+      <tr class="hover:bg-slate-50/80 transition">
+        <td class="p-4 font-bold text-brand">#${b.id}</td>
+        <td class="p-4">
+          <div class="font-bold">${b.user_name}</div>
+          <div class="text-xs text-slate-500">${b.user_email}</div>
+        </td>
+        <td class="p-4">
+          <span class="px-2.5 py-1 rounded-lg text-xs font-bold ${b.type === 'flight' ? 'bg-sky-50 text-brand' : 'bg-amber-50 text-amber-700'}">${b.type === 'flight' ? '✈ طيران' : '🏨 فندق'}</span>
+          <div class="font-semibold mt-1">${b.title}</div>
+        </td>
+        <td class="p-4 text-xs">
+          <div><b>الذهاب/الدخول:</b> ${b.start_date}</div>
+          ${b.end_date ? `<div><b>العودة/الخروج:</b> ${b.end_date}</div>` : ''}
+          <div><b>العدد:</b> ${b.qty}</div>
+        </td>
+        <td class="p-4 text-xs">
+          ${(b.passengers || []).map(p => `<div>• ${p.full_name} (${p.doc_number || p.phone})</div>`).join('')}
+        </td>
+        <td class="p-4 font-extrabold text-accent">${b.total} ج.م</td>
+        <td class="p-4">
+          <span class="px-3 py-1 rounded-full text-xs font-bold ${b.status === 'confirmed' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}">${b.status === 'confirmed' ? 'مؤكد' : 'ملغي'}</span>
+        </td>
+        <td class="p-4">
+          <div class="flex gap-2">
+            ${b.status !== 'confirmed' ? `<button onclick="updateStatus(${b.id}, 'confirmed')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">قبول</button>` : ''}
+            ${b.status !== 'cancelled' ? `<button onclick="updateStatus(${b.id}, 'cancelled')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">إلغاء</button>` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    toast('فشل جلب الحجوزات: ' + e.message);
+  }
+}
+
+async function updateStatus(id, status) {
+  try {
+    await api(`/api/admin/bookings/${id}/status`, 'POST', {status});
+    toast('تم تحديث حالة الحجز بنجاح');
+    loadBookings();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+$('#refreshBtn').onclick = loadBookings;
+checkAuth();
+</script>
+</body>
+</html>

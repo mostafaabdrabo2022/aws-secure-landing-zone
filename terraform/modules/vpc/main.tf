@@ -1,63 +1,52 @@
-# 1. إنشاء الـ VPC الرئيسي
-resource "aws_vpc" "this" {
-  cidr_block           = var.vpc_cidr
-  enable_dns_support   = true
-  enable_dns_hostnames = true
-
-  tags = {
-    Name        = "${var.environment}-vpc"
-    Environment = var.environment
-  }
-}
-
-# 2. إنشاء الـ Internet Gateway للبوابات الخارجية
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.this.id
-
-  tags = {
-    Name = "${var.environment}-igw"
-  }
-}
-
-# 3. إنشاء Public Subnet
-resource "aws_subnet" "public" {
-  vpc_id                  = aws_vpc.this.id
-  cidr_block              = cidrsubnet(var.vpc_cidr, 8, 1) # هيدينا شبكة فرعية مرتبطة بـ CIDR
-  availability_zone       = "us-east-1a"
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = "${var.environment}-public-subnet"
-  }
-}
-
-# 4. إنشاء Private Subnet
-resource "aws_subnet" "private" {
+# Data subnet: no internet route
+resource "aws_subnet" "data" {
   vpc_id            = aws_vpc.this.id
-  cidr_block        = cidrsubnet(var.vpc_cidr, 8, 10)
+  cidr_block        = cidrsubnet(var.vpc_cidr, 8, 20)
   availability_zone = "us-east-1a"
 
   tags = {
-    Name = "${var.environment}-private-subnet"
+    Name = "${var.environment}-data-subnet"
   }
 }
 
-# 5. Route Table للـ Public Subnet
-resource "aws_route_table" "public" {
+# Private route table (local only, no default route)
+resource "aws_route_table" "private" {
   vpc_id = aws_vpc.this.id
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.igw.id
-  }
-
   tags = {
-    Name = "${var.environment}-public-rt"
+    Name = "${var.environment}-private-rt"
   }
 }
 
-# ربط الـ Public Subnet بـ Route Table الخاص بالإنترنت
-resource "aws_route_table_association" "public" {
-  subnet_id      = aws_subnet.public.id
-  route_table_id = aws_route_table.public.id
+resource "aws_route_table_association" "private" {
+  subnet_id      = aws_subnet.private.id
+  route_table_id = aws_route_table.private.id
+}
+
+# Data route table (local only, no internet)
+resource "aws_route_table" "data" {
+  vpc_id = aws_vpc.this.id
+
+  tags = {
+    Name = "${var.environment}-data-rt"
+  }
+}
+
+resource "aws_route_table_association" "data" {
+  subnet_id      = aws_subnet.data.id
+  route_table_id = aws_route_table.data.id
+}
+
+# S3 Gateway endpoint (free)
+data "aws_region" "current" {}
+
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.this.id
+  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_route_table.private.id, aws_route_table.data.id]
+
+  tags = {
+    Name = "${var.environment}-s3-endpoint"
+  }
 }

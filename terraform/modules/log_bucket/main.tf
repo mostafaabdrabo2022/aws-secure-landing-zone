@@ -13,7 +13,7 @@ resource "aws_s3_bucket" "log_bucket" {
   }
 }
 
-# تفعيل الـ Versioning
+# Enabling Versioning
 resource "aws_s3_bucket_versioning" "versioning" {
   bucket = aws_s3_bucket.log_bucket.id
   versioning_configuration {
@@ -21,7 +21,7 @@ resource "aws_s3_bucket_versioning" "versioning" {
   }
 }
 
-# تفعيل التشفير باستخدام الشكل المحدث والمدعوم في AWS Provider v5+
+# Enabling encryption using the updated format supported in AWS Provider v5+
 resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
   bucket = aws_s3_bucket.log_bucket.id
 
@@ -32,7 +32,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
   }
 }
 
-# حجب أي وصول عام خارجي للسلة
+# Block any external public access to the bucket
 resource "aws_s3_bucket_public_access_block" "public_block" {
   bucket                  = aws_s3_bucket.log_bucket.id
   block_public_acls       = true

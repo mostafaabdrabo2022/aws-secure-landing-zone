@@ -1,0 +1,47 @@
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "AllowGeneralListingAndViewing",
+			"Effect": "Allow",
+			"Action": [
+				"s3:ListAllMyBuckets",
+				"s3:GetBucketLocation",
+				"s3:ListBucket",
+				"ec2:Describe*"
+			],
+			"Resource": "*"
+		},
+		{
+			"Sid": "EnforceMandatoryTaggingOnProdCreation",
+			"Effect": "Allow",
+			"Action": [
+				"s3:CreateBucket",
+				"s3:TagResource",
+				"ec2:RunInstances"
+			],
+			"Resource": "*",
+			"Condition": {
+				"StringEquals": {
+					"aws:RequestTag/Environment": "Prod"
+				}
+			}
+		},
+		{
+			"Sid": "AllowFullControlOnProdResourcesWithTags",
+			"Effect": "Allow",
+			"Action": [
+				"ec2:*",
+				"s3:*",
+				"rds:*",
+				"cloudwatch:*"
+			],
+			"Resource": "*",
+			"Condition": {
+				"StringEquals": {
+					"aws:ResourceTag/Environment": "Prod"
+				}
+			}
+		}
+	]
+}

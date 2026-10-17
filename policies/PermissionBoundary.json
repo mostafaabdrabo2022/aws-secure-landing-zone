@@ -1,0 +1,55 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "BlockUnauthorizedRegions",
+            "Effect": "Deny",
+            "NotAction": [
+                "iam:*",
+                "organizations:*",
+                "route53:*",
+                "cloudfront:*",
+                "support:*",
+                "sts:*"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringNotEquals": {
+                    "aws:RequestedRegion": [
+                        "eu-central-1",
+                        "us-east-1"
+                    ]
+                }
+            }
+        },
+        {
+            "Sid": "PreventSecurityLogDeletion",
+            "Effect": "Deny",
+            "Action": [
+                "cloudtrail:DeleteTrail",
+                "cloudtrail:StopLogging",
+                "config:DeleteDeliveryChannel",
+                "config:StopConfigurationRecorder"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "PreventAuditBucketDeletion",
+            "Effect": "Deny",
+            "Action": [
+                "s3:DeleteBucket",
+                "s3:DeleteBucketPolicy"
+            ],
+            "Resource": [
+                "arn:aws:s3:::<YOUR-LOGGING-BUCKET-NAME>",
+                "arn:aws:s3:::<YOUR-LOGGING-BUCKET-NAME>/*"
+            ]
+        },
+        {
+            "Sid": "AllowAllOtherActionsWithinLimits",
+            "Effect": "Allow",
+            "Action": "*",
+            "Resource": "*"
+        }
+    ]
+}

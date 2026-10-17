@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>رحلتي - تسجيل دخول المسؤول</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {theme: {extend: {
+  colors: {brand: {DEFAULT: '#1B75BC', dark: '#0F4C81'}, accent: {DEFAULT: '#1BB580', dark: '#139468'}},
+  fontFamily: {sans: ['Cairo', 'sans-serif']}}}};
+</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen grid place-items-center">
+
+  <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 border border-slate-200">
+    <div class="flex items-center gap-3 mb-6">
+      <span class="grid place-items-center w-12 h-12 rounded-2xl bg-brand text-white text-2xl">🛡️</span>
+      <div>
+        <h1 class="font-extrabold text-xl text-brand">تسجيل دخول المسؤول</h1>
+        <p class="text-xs text-slate-500">لوحة تحكم النظام - ADFS / IAM Ready</p>
+      </div>
+    </div>
+
+    <form id="adminLoginForm" class="grid gap-4">
+      <label class="grid gap-1 text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200 rounded-2xl p-3">
+        <span>البريد الإلكتروني</span>
+        <input type="email" name="email" required value="admin@rehlti.com" class="bg-transparent font-bold outline-none w-full text-slate-800">
+      </label>
+      <label class="grid gap-1 text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200 rounded-2xl p-3">
+        <span>كلمة السر</span>
+        <input type="password" name="password" required class="bg-transparent font-bold outline-none w-full text-slate-800">
+      </label>
+      <p id="loginErr" class="text-red-600 text-sm font-semibold min-h-5"></p>
+      <button type="submit" class="bg-brand hover:bg-brand-dark text-white font-extrabold rounded-2xl py-3.5 transition shadow-lg shadow-brand/20">دخول اللوحة</button>
+    </form>
+  </div>
+
+  <div id="toast" class="fixed bottom-6 inset-x-0 mx-auto w-max max-w-[90vw] bg-slate-900 text-white px-5 py-3 rounded-2xl opacity-0 pointer-events-none transition-opacity"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+async function api(url, method = 'GET', body) {
+  const r = await fetch(url, {method, headers: {'Content-Type': 'application/json'}, body: body && JSON.stringify(body)});
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(d.error || 'حدث خطأ'); e.status = r.status; throw e; }
+  return d;
+}
+function toast(t) {
+  const el = $('#toast'); el.textContent = t;
+  el.classList.replace('opacity-0', 'opacity-100');
+  setTimeout(() => el.classList.replace('opacity-100', 'opacity-0'), 2800);
+}
+
+$('#adminLoginForm').onsubmit = async e => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const data = { email: formData.get('email'), password: formData.get('password') };
+  $('#loginErr').textContent = '';
+  try {
+    await api('/api/login', 'POST', data);
+    toast('تم تسجيل الدخول بنجاح');
+    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
+  } catch (er) {
+    $('#loginErr').textContent = er.message;
+  }
+};
+</script>
+</body>
+</html>
