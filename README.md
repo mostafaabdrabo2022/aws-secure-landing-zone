@@ -51,7 +51,7 @@ This project addresses that with a secure baseline built in four stages:
 
 The project was implemented in a **single AWS account**, working through IAM users. Because of that:
 
-- Everything that runs inside one account was **implemented and evidenced** with screenshots (see [Screenshots](/evidence)).
+- Everything that runs inside one account was **implemented and evidenced** with screenshots (see [evidence](/evidence)).
 - Parts that need several accounts (member accounts and OUs, IAM Identity Center, enforced SCPs, cross-account roles, an organization-wide trail) are **covered as design and documentation** rather than deployed.
 
 This is called out explicitly so the reader knows what is built versus designed.
