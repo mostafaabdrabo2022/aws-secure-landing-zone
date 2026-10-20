@@ -961,7 +961,21 @@ gunicorn -w 4 -b 0.0.0.0:8080 app:app
 ```
 ---
 
-### Step 10: Architecture & Security Validation
+### Step 10: Check Database on EC2
+
+1. Command to access the database
+```bash
+psql -h [end_point_link] -U {master_username} -d {database_name}
+or
+mysql -h [end_point_link] -U {master_username} -d {database_name}
+```
+
+2. Write your password `=> PASSWORD`
+3. Use Query Language (ex: `SELECT * FROM users;`) to check
+
+---
+
+### Step 11: Architecture & Security Validation
 
 - **Database Connectivity:** The application connects securely to Amazon RDS (PostgreSQL) residing in a private subnet, authorized via Security Groups allowing inbound traffic on port `5432` strictly from the EC2 application security group.
 
