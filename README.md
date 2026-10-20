@@ -319,24 +319,32 @@ Open the route table → **Routes** → **Edit routes** → **Add route**:
 ### Step 6 — Create Security Groups
 
 **ALB Security Group (`Sg-alb`)**
+| Direction | Type | Protocol | Port Range | Source type | Source |
+|---|---|---|---|---|---|
+| Inbound | HTTP | TCP | 443| Custom  | `0.0.0.0/0` |
+| Inbound | HTTPS | TCP | 80 | Custom  | Custom | `0.0.0.0/0` |
 
-| Direction | Type | Port | Source |
-|---|---|---|---|
-| Inbound | HTTP | 80 | `0.0.0.0/0` |
+| Direction | Type | Protocol | Port Range | Destination type | Destination |
+|---|---|---|---|---|---|
+| Outbound | All Traffic | All | All | Custom | `0.0.0.0/0` |
 
 **EC2 Security Group (`Sg-app`)**
+| Direction | Type | Protocol | Port Range | Source type | Source |
+|---|---|---|---|---|---|
+| Inbound | Custom TCP | TCP | 8080 | Custom | `Sg-alb` |
 
-| Direction | Type | Port | Source |
-|---|---|---|---|
-| Inbound | HTTP | 80 | `ats-alb-sg` |
-| Inbound | SSH | 22 | My IP |
+| Direction | Type | Protocol | Port Range | Destination type | Destination |
+|---|---|---|---|---|---|
+| Outbound | All Traffic | All | All | Custom | `0.0.0.0/0` |
 
 **DataBase Security Group (`Sg-DB`)**
+| Direction | Type | Protocol | Port Range | Source type | Source |
+|---|---|---|---|---|---|
+| Inbound | PostgreSQL | TCP | 5432 | Custom | `Sg-app` |
 
-| Direction | Type | Port | Source |
-|---|---|---|---|
-| Inbound | HTTP | 80 | `ats-alb-sg` |
-| Inbound | SSH | 22 | My IP |
+| Direction | Type | Protocol | Port Range | Destination type | Destination |
+|---|---|---|---|---|---|
+| Outbound | PostgreSQL | TCP | 5432 | Custom | `Sg-app` |
 
 ### Step 7 — Create Network ACL
 
